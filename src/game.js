@@ -416,12 +416,13 @@ export class PixelGame {
     const inside = (R) =>
       x >= R.x && x <= R.x + R.w && y >= R.y && y <= R.y + R.h;
 
-    // Solo se puede devolver un frasco sin ruta si todavía puede empezar a comer.
+    // Se puede devolver cualquier frasco que aún no haya enviado hormigas (dispatched === 0)
     for (let i = 0; i < SLOT_COUNT; i++) {
       const jar = this.slots[i];
       if (jar && inside(this.slotRect(i))) {
-        if (jar.dispatched === 0 && this.findTarget(jar.color) >= 0) {
+        if (jar.dispatched === 0) {
           this.slots[i] = null;
+          jar.blocked = false;
           this.columns[jar.col].unshift(jar);
           this.setTargetColor(this.nextTargetColor());
           jar.bounce = 1;
@@ -623,7 +624,7 @@ export class PixelGame {
     }
   }
 
-  /** Derrota: bandeja llena y ningún frasco puede avanzar. */
+  /** Derrota: bandeja llena y ningún frasco puede avanzar ni ser devuelto. */
   checkStuck(dt) {
     this.stuckCheck -= dt;
     if (this.stuckCheck > 0) return;
@@ -635,7 +636,10 @@ export class PixelGame {
     }
     const busy = this.ants.some((a) => a.phase === "go" || a.phase === "bite");
     const canMove = this.slots.some(
-      (j) => j.dispatched < j.capacity && this.findTarget(j.color) >= 0,
+      (j) =>
+        j &&
+        ((j.dispatched < j.capacity && this.findTarget(j.color) >= 0) ||
+          j.dispatched === 0),
     );
     if (busy || canMove) {
       this.stuckTimer = 0;

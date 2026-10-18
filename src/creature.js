@@ -7,11 +7,17 @@
 
 export function shade(hex, amt) {
   const v = parseInt(hex.slice(1), 16);
-  let r = (v >> 16) & 255, g = (v >> 8) & 255, b = v & 255;
+  let r = (v >> 16) & 255,
+    g = (v >> 8) & 255,
+    b = v & 255;
   if (amt < 0) {
-    r *= 1 + amt; g *= 1 + amt; b *= 1 + amt;
+    r *= 1 + amt;
+    g *= 1 + amt;
+    b *= 1 + amt;
   } else {
-    r += (255 - r) * amt; g += (255 - g) * amt; b += (255 - b) * amt;
+    r += (255 - r) * amt;
+    g += (255 - g) * amt;
+    b += (255 - b) * amt;
   }
   return `rgb(${r | 0},${g | 0},${b | 0})`;
 }
@@ -40,7 +46,12 @@ export class Particle {
   draw(ctx) {
     ctx.globalAlpha = Math.max(0, this.life);
     ctx.fillStyle = this.color;
-    ctx.fillRect(this.x - this.size / 2, this.y - this.size / 2, this.size, this.size);
+    ctx.fillRect(
+      this.x - this.size / 2,
+      this.y - this.size / 2,
+      this.size,
+      this.size,
+    );
     ctx.globalAlpha = 1;
   }
 }
@@ -68,7 +79,7 @@ export class Ant {
     this.y = this.points[0].y;
     this.idx = 1;
     this.angle = -Math.PI / 2;
-    this.phase = 'go'; // go -> bite -> back -> fade -> dead
+    this.phase = "go"; // go -> bite -> back -> fade -> dead
     this.timer = 0;
     this.alpha = 0;
     this.scale = 0.4;
@@ -79,40 +90,41 @@ export class Ant {
   /** @returns {'bite'|'dead'|null} evento */
   update(dt) {
     this.walk += dt * 22;
-    if (this.alpha < 1 && this.phase !== 'fade') this.alpha = Math.min(1, this.alpha + dt * 5);
+    if (this.alpha < 1 && this.phase !== "fade")
+      this.alpha = Math.min(1, this.alpha + dt * 5);
     if (this.scale < 1) this.scale = Math.min(1, this.scale + dt * 4);
 
-    if (this.phase === 'go' || this.phase === 'back') {
+    if (this.phase === "go" || this.phase === "back") {
       if (this.moveAlong(dt)) {
-        if (this.phase === 'go') {
-          this.phase = 'bite';
+        if (this.phase === "go") {
+          this.phase = "bite";
           this.timer = 0.09;
         } else {
-          this.phase = 'fade';
+          this.phase = "fade";
           this.timer = 0.25;
         }
       }
       return null;
     }
 
-    if (this.phase === 'bite') {
+    if (this.phase === "bite") {
       this.timer -= dt;
       if (this.timer <= 0) {
-        this.phase = 'back';
+        this.phase = "back";
         this.points = this.returnPoints;
         this.idx = 0;
-        return 'bite';
+        return "bite";
       }
       return null;
     }
 
-    if (this.phase === 'fade') {
+    if (this.phase === "fade") {
       this.timer -= dt;
       this.alpha = Math.max(0, this.timer / 0.25);
       this.scale = 0.6 + 0.4 * this.alpha;
       if (this.timer <= 0) {
-        this.phase = 'dead';
-        return 'dead';
+        this.phase = "dead";
+        return "dead";
       }
     }
     return null;
@@ -123,7 +135,8 @@ export class Ant {
     while (step > 0) {
       const t = this.points[this.idx];
       if (!t) return true;
-      const dx = t.x - this.x, dy = t.y - this.y;
+      const dx = t.x - this.x,
+        dy = t.y - this.y;
       const d = Math.hypot(dx, dy);
       if (d > 0.01) {
         const target = Math.atan2(dy, dx);
@@ -146,21 +159,22 @@ export class Ant {
   }
 
   draw(ctx) {
-    const L = this.len * this.scale, W = this.wid * this.scale;
+    const L = this.len * this.scale,
+      W = this.wid * this.scale;
     ctx.save();
     ctx.globalAlpha = this.alpha;
     ctx.translate(this.x, this.y);
     ctx.rotate(this.angle);
 
     const lw = Math.max(0.8, W * 0.08);
-    const moving = this.phase === 'go' || this.phase === 'back';
+    const moving = this.phase === "go" || this.phase === "back";
     const swing = moving ? Math.sin(this.walk) : 0;
-    const chew = this.phase === 'bite' ? Math.sin(this.walk * 3) * W * 0.06 : 0;
+    const chew = this.phase === "bite" ? Math.sin(this.walk * 3) * W * 0.06 : 0;
 
     // Patitas (3 pares)
     ctx.strokeStyle = this.outline;
     ctx.lineWidth = lw * 1.1;
-    ctx.lineCap = 'round';
+    ctx.lineCap = "round";
     const legX = [-0.12, 0.02, 0.14];
     for (let k = 0; k < 3; k++) {
       const s = (k % 2 === 0 ? swing : -swing) * L * 0.07;
@@ -211,11 +225,11 @@ export class Ant {
 
     // Ojos grandes
     for (const sgn of [-1, 1]) {
-      ctx.fillStyle = '#FFFFFF';
+      ctx.fillStyle = "#FFFFFF";
       ctx.beginPath();
       ctx.arc(hx + W * 0.12, sgn * W * 0.15, W * 0.13, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = '#1B1B1B';
+      ctx.fillStyle = "#1B1B1B";
       ctx.beginPath();
       ctx.arc(hx + W * 0.17, sgn * W * 0.15, W * 0.075, 0, Math.PI * 2);
       ctx.fill();
@@ -227,7 +241,7 @@ export class Ant {
       const cx = hx + W * 0.42;
       ctx.fillStyle = this.carry;
       ctx.fillRect(cx, -s / 2, s, s);
-      ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+      ctx.strokeStyle = "rgba(0,0,0,0.35)";
       ctx.lineWidth = Math.max(0.6, s * 0.1);
       ctx.strokeRect(cx, -s / 2, s, s);
     }

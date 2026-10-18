@@ -16,7 +16,7 @@ class SoundFX {
         this.ctx = new AudioContext();
       }
     }
-    if (this.ctx && this.ctx.state === 'suspended') {
+    if (this.ctx && this.ctx.state === "suspended") {
       this.ctx.resume();
     }
   }
@@ -39,7 +39,7 @@ class SoundFX {
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
 
-    osc.type = 'sine';
+    osc.type = "sine";
     const baseFreq = 520 + Math.random() * 80 + frequencyOffset;
     osc.frequency.setValueAtTime(baseFreq, t);
     osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.6, t + 0.05);
@@ -64,7 +64,7 @@ class SoundFX {
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
 
-    osc.type = 'triangle';
+    osc.type = "triangle";
     osc.frequency.setValueAtTime(320, t);
     osc.frequency.exponentialRampToValueAtTime(180, t + 0.08);
 
@@ -90,7 +90,7 @@ class SoundFX {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
 
-      osc.type = 'sine';
+      osc.type = "sine";
       osc.frequency.setValueAtTime(freq, t);
 
       gain.gain.setValueAtTime(0.15, t);
@@ -114,7 +114,7 @@ class SoundFX {
       { f: 523.25, d: 0.12 }, // C5
       { f: 659.25, d: 0.12 }, // E5
       { f: 783.99, d: 0.12 }, // G5
-      { f: 1046.50, d: 0.35 } // C6
+      { f: 1046.5, d: 0.35 }, // C6
     ];
 
     let start = this.ctx.currentTime;
@@ -122,7 +122,7 @@ class SoundFX {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
 
-      osc.type = 'triangle';
+      osc.type = "triangle";
       osc.frequency.setValueAtTime(note.f, start);
 
       gain.gain.setValueAtTime(0.25, start);
@@ -148,7 +148,7 @@ class SoundFX {
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
 
-    osc.type = 'sawtooth';
+    osc.type = "sawtooth";
     osc.frequency.setValueAtTime(150, t);
     osc.frequency.exponentialRampToValueAtTime(90, t + 0.2);
 

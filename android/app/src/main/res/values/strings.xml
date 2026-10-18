@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Food Hunt</string>
+    <string name="title_activity_main">Food Hunt</string>
+    <string name="package_name">com.ia.foodhunt</string>
+    <string name="custom_url_scheme">com.ia.foodhunt</string>
+</resources>

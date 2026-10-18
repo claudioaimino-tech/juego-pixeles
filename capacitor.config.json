@@ -1,0 +1,12 @@
+{
+  "appId": "com.ia.foodhunt",
+  "appName": "Food Hunt",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "backgroundColor": "#2F3542",
+    "allowMixedContent": true
+  }
+}

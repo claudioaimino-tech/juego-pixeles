@@ -1,6 +1,6 @@
-import { Ant, Particle, shade } from './creature.js';
-import { sfx } from './audio.js';
-import { buildJarColumns } from './levels.js';
+import { Ant, Particle, shade } from "./creature.js";
+import { sfx } from "./audio.js";
+import { buildJarColumns } from "./levels.js";
 
 const EMPTY = -1;
 const SLOT_COUNT = 5;
@@ -10,13 +10,13 @@ const SPAWN_INTERVAL = 0.085; // segundos entre hormigas de un mismo frasco
 const STUCK_SECONDS = 2.5;
 
 const COLORS = {
-  bg: '#F6DCC4',
-  frame: '#F7F1EA',
-  frameEdge: '#E2D3C2',
-  rail: '#EFE5DA',
-  emptyCell: '#EADCCB',
-  slot: '#EBD3BC',
-  slotEdge: '#DDBFA3',
+  bg: "#F6DCC4",
+  frame: "#F7F1EA",
+  frameEdge: "#E2D3C2",
+  rail: "#EFE5DA",
+  emptyCell: "#EADCCB",
+  slot: "#EBD3BC",
+  slotEdge: "#DDBFA3",
 };
 
 /**
@@ -32,7 +32,7 @@ const COLORS = {
 export class PixelGame {
   constructor(canvas, callbacks = {}) {
     this.canvas = canvas;
-    this.ctx = canvas.getContext('2d');
+    this.ctx = canvas.getContext("2d");
     this.cb = callbacks;
     this.dpr = Math.min(window.devicePixelRatio || 1, 2.5);
 
@@ -44,17 +44,17 @@ export class PixelGame {
     this.ants = [];
     this.particles = [];
     this.speed = 1;
-    this.state = 'idle'; // idle | playing | won | lost
+    this.state = "idle"; // idle | playing | won | lost
     this.stuckTimer = 0;
     this.stuckCheck = 0;
     this.winTimer = 0;
     this.L = null;
 
-    this.boardCanvas = document.createElement('canvas');
-    this.bctx = this.boardCanvas.getContext('2d');
+    this.boardCanvas = document.createElement("canvas");
+    this.bctx = this.boardCanvas.getContext("2d");
 
-    window.addEventListener('resize', () => this.resize());
-    canvas.addEventListener('pointerdown', (e) => this.onPointer(e));
+    window.addEventListener("resize", () => this.resize());
+    canvas.addEventListener("pointerdown", (e) => this.onPointer(e));
 
     this.resize();
     this.last = performance.now();
@@ -84,22 +84,26 @@ export class PixelGame {
     for (let i = 0; i < n; i++) if (this.cells[i] !== EMPTY) this.total++;
     this.eaten = 0;
     this.remainingByColor = new Int32Array(data.palette.length);
-    for (let i = 0; i < n; i++) if (this.cells[i] !== EMPTY) this.remainingByColor[this.cells[i]]++;
+    for (let i = 0; i < n; i++)
+      if (this.cells[i] !== EMPTY) this.remainingByColor[this.cells[i]]++;
     this.targetColor = -1;
 
     this.columns = buildJarColumns(data, RESERVE_COLS, seed);
     this.slots = Array(SLOT_COUNT).fill(null);
     this.ants = [];
     this.particles = [];
-    this.state = 'playing';
+    this.state = "playing";
     this.stuckTimer = 0;
     this.winTimer = 0;
 
     this.layout();
     this.redrawBoard();
-    const availableTarget = this.columns.map((column) => column[0])
+    const availableTarget = this.columns
+      .map((column) => column[0])
       .find((jar) => jar && this.findTarget(jar.color) >= 0);
-    const firstTarget = availableTarget || this.columns.map((column) => column[0]).find((jar) => jar);
+    const firstTarget =
+      availableTarget ||
+      this.columns.map((column) => column[0]).find((jar) => jar);
     if (firstTarget) this.setTargetColor(firstTarget.color);
     else this.cb.onTarget?.(null);
     this.cb.onProgress?.(0, this.total);
@@ -126,31 +130,66 @@ export class PixelGame {
 
   layout() {
     const { cols, rows } = this.data;
-    const W = this.w, H = this.h;
+    const W = this.w,
+      H = this.h;
     const rail = Math.max(12, Math.min(18, Math.round(W * 0.035)));
 
     const maxBW = W - 2 * rail - 12;
     const maxBH = H * 0.48 - 2 * rail; // Reserva espacio para dos filas de frascos siguientes
-    const cs = Math.max(3, Math.floor(Math.min(maxBW / cols, maxBH / rows) * this.dpr) / this.dpr);
-    const bw = cs * cols, bh = cs * rows;
+    const cs = Math.max(
+      3,
+      Math.floor(Math.min(maxBW / cols, maxBH / rows) * this.dpr) / this.dpr,
+    );
+    const bw = cs * cols,
+      bh = cs * rows;
     const bx = Math.round((W - bw) / 2);
     const by = Math.round(8 + rail);
 
-    const frame = { x: bx - rail, y: by - rail, w: bw + 2 * rail, h: bh + 2 * rail };
-    const railR = { x: bx - rail / 2, y: by - rail / 2, w: bw + rail, h: bh + rail };
-    const hole = { x: W / 2, y: frame.y + frame.h + 12, r: Math.max(10, Math.min(16, cs * 2)) };
+    const frame = {
+      x: bx - rail,
+      y: by - rail,
+      w: bw + 2 * rail,
+      h: bh + 2 * rail,
+    };
+    const railR = {
+      x: bx - rail / 2,
+      y: by - rail / 2,
+      w: bw + rail,
+      h: bh + rail,
+    };
+    const hole = {
+      x: W / 2,
+      y: frame.y + frame.h + 12,
+      r: Math.max(10, Math.min(16, cs * 2)),
+    };
 
     const gap = 6;
     // Casilleros más chicos
-    const slotW = Math.min(50, Math.floor((W - 20 - gap * (SLOT_COUNT - 1)) / SLOT_COUNT));
+    const slotW = Math.min(
+      50,
+      Math.floor((W - 20 - gap * (SLOT_COUNT - 1)) / SLOT_COUNT),
+    );
     const slotH = Math.round(slotW * 1.08);
     const trayX = (W - (SLOT_COUNT * slotW + (SLOT_COUNT - 1) * gap)) / 2;
     const trayY = hole.y + hole.r + 8;
     const reserveY = trayY + slotH + 27;
 
     this.L = {
-      cs, bx, by, bw, bh, rail, frame, railR, hole,
-      gap, slotW, slotH, trayX, trayY, reserveY,
+      cs,
+      bx,
+      by,
+      bw,
+      bh,
+      rail,
+      frame,
+      railR,
+      hole,
+      gap,
+      slotW,
+      slotH,
+      trayX,
+      trayY,
+      reserveY,
       perim: 2 * (railR.w + railR.h),
       antSpeed: 210 + cs * 6,
     };
@@ -160,18 +199,29 @@ export class PixelGame {
 
   slotRect(i) {
     const L = this.L;
-    return { x: L.trayX + i * (L.slotW + L.gap), y: L.trayY, w: L.slotW, h: L.slotH };
+    return {
+      x: L.trayX + i * (L.slotW + L.gap),
+      y: L.trayY,
+      w: L.slotW,
+      h: L.slotH,
+    };
   }
 
   columnRect(c) {
     const L = this.L;
-    return { x: L.trayX + c * (L.slotW + L.gap), y: L.reserveY, w: L.slotW, h: L.slotH };
+    return {
+      x: L.trayX + c * (L.slotW + L.gap),
+      y: L.reserveY,
+      w: L.slotW,
+      h: L.slotH,
+    };
   }
 
   /* ======================= Riel del marco ======================== */
 
   railPoint(s) {
-    const R = this.L.railR, P = this.L.perim;
+    const R = this.L.railR,
+      P = this.L.perim;
     s = ((s % P) + P) % P;
     if (s < R.w) return { x: R.x + s, y: R.y };
     s -= R.w;
@@ -184,7 +234,8 @@ export class PixelGame {
 
   /** Puntos para ir por el riel de s0 a s1 por el camino más corto. */
   railPath(s0, s1) {
-    const R = this.L.railR, P = this.L.perim;
+    const R = this.L.railR,
+      P = this.L.perim;
     const fwd = (s1 - s0 + P) % P;
     const dir = fwd <= P / 2 ? 1 : -1;
     const len = dir > 0 ? fwd : P - fwd;
@@ -215,8 +266,10 @@ export class PixelGame {
   entryFor(cell) {
     const { cols, rows } = this.data;
     const { cs, bx, by, railR: R } = this.L;
-    const r = (cell / cols) | 0, c = cell % cols;
-    const cx = bx + c * cs + cs / 2, cy = by + r * cs + cs / 2;
+    const r = (cell / cols) | 0,
+      c = cell % cols;
+    const cx = bx + c * cs + cs / 2,
+      cy = by + r * cs + cs / 2;
     const opts = [];
     if (r === rows - 1) opts.push(R.w + R.h + (R.x + R.w - cx));
     if (r === 0) opts.push(cx - R.x);
@@ -232,33 +285,48 @@ export class PixelGame {
   cellCenter(i) {
     const { cs, bx, by } = this.L;
     const cols = this.data.cols;
-    return { x: bx + (i % cols) * cs + cs / 2, y: by + ((i / cols) | 0) * cs + cs / 2 };
+    return {
+      x: bx + (i % cols) * cs + cs / 2,
+      y: by + ((i / cols) | 0) * cs + cs / 2,
+    };
   }
 
   isBoundary(i) {
     const { cols, rows } = this.data;
-    const r = (i / cols) | 0, c = i % cols;
+    const r = (i / cols) | 0,
+      c = i % cols;
     return r === 0 || c === 0 || r === rows - 1 || c === cols - 1;
   }
 
   isExposed(i) {
     if (this.isBoundary(i)) return true;
-    const cols = this.data.cols, cells = this.cells;
-    return cells[i - cols] === EMPTY || cells[i + cols] === EMPTY || cells[i - 1] === EMPTY || cells[i + 1] === EMPTY;
+    const cols = this.data.cols,
+      cells = this.cells;
+    return (
+      cells[i - cols] === EMPTY ||
+      cells[i + cols] === EMPTY ||
+      cells[i - 1] === EMPTY ||
+      cells[i + 1] === EMPTY
+    );
   }
 
   /** Celda expuesta y libre del color indicado, la más cercana al agujero. */
   findTarget(color) {
     const { cols } = this.data;
     const { cs, bx, by, hole } = this.L;
-    const cells = this.cells, reserved = this.reserved;
-    let best = -1, bestD = Infinity;
+    const cells = this.cells,
+      reserved = this.reserved;
+    let best = -1,
+      bestD = Infinity;
     for (let i = 0; i < cells.length; i++) {
       if (cells[i] !== color || reserved[i] || !this.isExposed(i)) continue;
       const dx = bx + (i % cols) * cs - hole.x;
       const dy = by + ((i / cols) | 0) * cs - hole.y;
       const d = dx * dx + dy * dy;
-      if (d < bestD) { bestD = d; best = i; }
+      if (d < bestD) {
+        bestD = d;
+        best = i;
+      }
     }
     return best;
   }
@@ -281,8 +349,15 @@ export class PixelGame {
   }
 
   nextTargetColor() {
-    const available = [...this.slots, ...this.columns.map((column) => column[0])]
-      .find((jar) => jar && this.remainingByColor[jar.color] > 0 && this.findTarget(jar.color) >= 0);
+    const available = [
+      ...this.slots,
+      ...this.columns.map((column) => column[0]),
+    ].find(
+      (jar) =>
+        jar &&
+        this.remainingByColor[jar.color] > 0 &&
+        this.findTarget(jar.color) >= 0,
+    );
     if (available) return available.color;
     return this.remainingByColor.findIndex((count) => count > 0);
   }
@@ -294,16 +369,26 @@ export class PixelGame {
   pathFromBoundary(target) {
     if (this.isBoundary(target)) return [target];
     const { cols, rows } = this.data;
-    const cells = this.cells, visit = this.visit, parent = this.parent, q = this.queue;
+    const cells = this.cells,
+      visit = this.visit,
+      parent = this.parent,
+      q = this.queue;
     const st = ++this.stamp;
-    let h = 0, t = 0;
+    let h = 0,
+      t = 0;
     visit[target] = st;
     parent[target] = -1;
     q[t++] = target;
     while (h < t) {
       const i = q[h++];
-      const r = (i / cols) | 0, c = i % cols;
-      const nb = [r > 0 ? i - cols : -1, r < rows - 1 ? i + cols : -1, c > 0 ? i - 1 : -1, c < cols - 1 ? i + 1 : -1];
+      const r = (i / cols) | 0,
+        c = i % cols;
+      const nb = [
+        r > 0 ? i - cols : -1,
+        r < rows - 1 ? i + cols : -1,
+        c > 0 ? i - 1 : -1,
+        c < cols - 1 ? i + 1 : -1,
+      ];
       for (const j of nb) {
         if (j < 0 || visit[j] === st || cells[j] !== EMPTY) continue;
         visit[j] = st;
@@ -322,12 +407,14 @@ export class PixelGame {
   /* =========================== Entrada =========================== */
 
   onPointer(e) {
-    if (this.state !== 'playing' || !this.L) return;
+    if (this.state !== "playing" || !this.L) return;
     e.preventDefault();
     sfx.init();
     const r = this.canvas.getBoundingClientRect();
-    const x = e.clientX - r.left, y = e.clientY - r.top;
-    const inside = (R) => x >= R.x && x <= R.x + R.w && y >= R.y && y <= R.y + R.h;
+    const x = e.clientX - r.left,
+      y = e.clientY - r.top;
+    const inside = (R) =>
+      x >= R.x && x <= R.x + R.w && y >= R.y && y <= R.y + R.h;
 
     // Solo se puede devolver un frasco sin ruta si todavía puede empezar a comer.
     for (let i = 0; i < SLOT_COUNT; i++) {
@@ -369,13 +456,16 @@ export class PixelGame {
 
   /** Modo de prueba (?autoplay): elige un frasco cuyo color tenga píxeles alcanzables. */
   autoStep() {
-    if (this.state !== 'playing') return;
+    if (this.state !== "playing") return;
     const free = this.slots.indexOf(null);
     if (free === -1) return;
     let pick = -1;
     for (let c = 0; c < RESERVE_COLS; c++) {
       const top = this.columns[c][0];
-      if (top && this.findTarget(top.color) >= 0) { pick = c; break; }
+      if (top && this.findTarget(top.color) >= 0) {
+        pick = c;
+        break;
+      }
     }
     if (pick < 0) pick = this.columns.findIndex((col) => col.length > 0);
     if (pick < 0) return;
@@ -400,7 +490,7 @@ export class PixelGame {
     this.slots.forEach(anim);
     this.columns.forEach((col) => anim(col[0]));
 
-    if (this.state === 'playing') {
+    if (this.state === "playing") {
       // Envío de hormigas
       for (let i = 0; i < SLOT_COUNT; i++) {
         const jar = this.slots[i];
@@ -417,8 +507,8 @@ export class PixelGame {
     for (let k = this.ants.length - 1; k >= 0; k--) {
       const ant = this.ants[k];
       const ev = ant.update(dt);
-      if (ev === 'bite') this.eat(ant);
-      else if (ev === 'dead') this.ants.splice(k, 1);
+      if (ev === "bite") this.eat(ant);
+      else if (ev === "dead") this.ants.splice(k, 1);
     }
 
     // Partículas
@@ -432,19 +522,22 @@ export class PixelGame {
       if (jar && jar.remaining <= 0) {
         this.slots[i] = null;
         const R = this.slotRect(i);
-        for (let p = 0; p < 14; p++) this.particles.push(new Particle(R.x + R.w / 2, R.y + R.h / 2, jar.hex, 14));
+        for (let p = 0; p < 14; p++)
+          this.particles.push(
+            new Particle(R.x + R.w / 2, R.y + R.h / 2, jar.hex, 14),
+          );
         sfx.playJarClear();
       }
     }
 
-    if (this.state === 'playing') {
+    if (this.state === "playing") {
       if (this.eaten >= this.total) {
-        this.state = 'won';
+        this.state = "won";
         this.winTimer = 0.7;
       } else {
         this.checkStuck(dt);
       }
-    } else if (this.state === 'won' && this.winTimer > 0) {
+    } else if (this.state === "won" && this.winTimer > 0) {
       this.winTimer -= dt;
       if (this.winTimer <= 0) {
         sfx.playVictory();
@@ -481,7 +574,12 @@ export class PixelGame {
       ...this.railPath(hs, es),
       ...inner,
     ];
-    const returnPoints = [...inner.slice(0, -1).reverse(), entry, ...this.railPath(es, hs), { x: L.hole.x, y: L.hole.y }];
+    const returnPoints = [
+      ...inner.slice(0, -1).reverse(),
+      entry,
+      ...this.railPath(es, hs),
+      { x: L.hole.x, y: L.hole.y },
+    ];
 
     this.ants.push(
       new Ant({
@@ -492,7 +590,7 @@ export class PixelGame {
         colorHex: jar.hex,
         cellSize: L.cs,
         speed: L.antSpeed * (0.92 + Math.random() * 0.16),
-      })
+      }),
     );
   }
 
@@ -511,12 +609,14 @@ export class PixelGame {
 
     const p = this.cellCenter(t);
     if (this.particles.length < 260) {
-      for (let k = 0; k < 3; k++) this.particles.push(new Particle(p.x, p.y, hex, this.L.cs));
+      for (let k = 0; k < 3; k++)
+        this.particles.push(new Particle(p.x, p.y, hex, this.L.cs));
     }
     sfx.playEatPop((this.eaten % 10) * 18);
     this.cb.onProgress?.(this.eaten, this.total);
     if (color === this.targetColor) {
-      if (this.remainingByColor[color] === 0) this.setTargetColor(this.nextTargetColor());
+      if (this.remainingByColor[color] === 0)
+        this.setTargetColor(this.nextTargetColor());
       else this.setTargetColor(color);
     } else if (this.targetColor >= 0) {
       this.setTargetColor(this.targetColor);
@@ -533,15 +633,17 @@ export class PixelGame {
       this.stuckTimer = 0;
       return;
     }
-    const busy = this.ants.some((a) => a.phase === 'go' || a.phase === 'bite');
-    const canMove = this.slots.some((j) => j.dispatched < j.capacity && this.findTarget(j.color) >= 0);
+    const busy = this.ants.some((a) => a.phase === "go" || a.phase === "bite");
+    const canMove = this.slots.some(
+      (j) => j.dispatched < j.capacity && this.findTarget(j.color) >= 0,
+    );
     if (busy || canMove) {
       this.stuckTimer = 0;
       return;
     }
     this.stuckTimer += 0.25;
     if (this.stuckTimer >= STUCK_SECONDS) {
-      this.state = 'lost';
+      this.state = "lost";
       sfx.playError();
       this.cb.onLose?.();
     }
@@ -556,23 +658,26 @@ export class PixelGame {
   }
 
   drawCell(i) {
-    const ctx = this.bctx, cs = this.L.cs, cols = this.data.cols;
-    const x = (i % cols) * cs, y = ((i / cols) | 0) * cs;
+    const ctx = this.bctx,
+      cs = this.L.cs,
+      cols = this.data.cols;
+    const x = (i % cols) * cs,
+      y = ((i / cols) | 0) * cs;
     const line = Math.max(1 / this.dpr, cs * 0.07);
     const v = this.cells[i];
     if (v === EMPTY) {
       ctx.fillStyle = COLORS.emptyCell;
       ctx.fillRect(x, y, cs, cs);
-      ctx.fillStyle = 'rgba(0,0,0,0.04)';
+      ctx.fillStyle = "rgba(0,0,0,0.04)";
       ctx.fillRect(x + cs - line, y, line, cs);
       ctx.fillRect(x, y + cs - line, cs, line);
       return;
     }
     ctx.fillStyle = this.data.palette[v].hex;
     ctx.fillRect(x, y, cs, cs);
-    ctx.fillStyle = 'rgba(255,255,255,0.16)';
+    ctx.fillStyle = "rgba(255,255,255,0.16)";
     ctx.fillRect(x, y, cs, Math.max(line, cs * 0.16));
-    ctx.fillStyle = 'rgba(0,0,0,0.13)';
+    ctx.fillStyle = "rgba(0,0,0,0.13)";
     ctx.fillRect(x + cs - line, y, line, cs);
     ctx.fillRect(x, y + cs - line, cs, line);
   }
@@ -587,7 +692,7 @@ export class PixelGame {
 
     // Marco + riel
     ctx.save();
-    ctx.shadowColor = 'rgba(120, 70, 30, 0.22)';
+    ctx.shadowColor = "rgba(120, 70, 30, 0.22)";
     ctx.shadowBlur = 16;
     ctx.shadowOffsetY = 5;
     ctx.fillStyle = COLORS.frame;
@@ -605,19 +710,19 @@ export class PixelGame {
     // Tablero
     ctx.drawImage(this.boardCanvas, L.bx, L.by, L.bw, L.bh);
     this.drawTargetHints(ctx);
-    ctx.strokeStyle = 'rgba(90, 60, 30, 0.25)';
+    ctx.strokeStyle = "rgba(90, 60, 30, 0.25)";
     ctx.lineWidth = 1.5;
     ctx.strokeRect(L.bx - 0.75, L.by - 0.75, L.bw + 1.5, L.bh + 1.5);
 
     // Agujero
     const { x: hx, y: hy, r: hr } = L.hole;
-    ctx.fillStyle = '#E7C3A2';
+    ctx.fillStyle = "#E7C3A2";
     ctx.beginPath();
     ctx.ellipse(hx, hy, hr + 4, (hr + 4) * 0.62, 0, 0, Math.PI * 2);
     ctx.fill();
     const g = ctx.createRadialGradient(hx, hy - 2, 1, hx, hy, hr);
-    g.addColorStop(0, '#3A2416');
-    g.addColorStop(1, '#7A4E33');
+    g.addColorStop(0, "#3A2416");
+    g.addColorStop(1, "#7A4E33");
     ctx.fillStyle = g;
     ctx.beginPath();
     ctx.ellipse(hx, hy, hr, hr * 0.6, 0, 0, Math.PI * 2);
@@ -630,11 +735,11 @@ export class PixelGame {
     // Bandeja (5 slots)
     for (let i = 0; i < SLOT_COUNT; i++) {
       const R = this.slotRect(i);
-      ctx.fillStyle = 'rgba(235, 211, 188, 0.4)'; // Más transparente como fondo
+      ctx.fillStyle = "rgba(235, 211, 188, 0.4)"; // Más transparente como fondo
       rr(ctx, R.x, R.y, R.w, R.h, 8);
       ctx.fill();
       ctx.setLineDash([5, 4]);
-      ctx.strokeStyle = 'rgba(180, 150, 120, 0.5)';
+      ctx.strokeStyle = "rgba(180, 150, 120, 0.5)";
       ctx.lineWidth = 2;
       ctx.stroke();
       ctx.setLineDash([]);
@@ -642,30 +747,37 @@ export class PixelGame {
     }
 
     // Reserva en grilla
-    ctx.fillStyle = 'rgba(80, 50, 30, 0.65)';
+    ctx.fillStyle = "rgba(80, 50, 30, 0.65)";
     ctx.font = "800 10px 'Outfit', sans-serif";
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('EN FILA · TOCA EL PRIMERO', this.w / 2, L.reserveY - 12);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("EN FILA · TOCA EL PRIMERO", this.w / 2, L.reserveY - 12);
 
     for (let c = 0; c < RESERVE_COLS; c++) {
       const col = this.columns[c];
       const rowHeight = L.slotH + L.gap;
-      const visibleRows = Math.max(2, Math.min(4, Math.floor((this.h - L.reserveY - 18) / rowHeight)));
+      const visibleRows = Math.max(
+        2,
+        Math.min(4, Math.floor((this.h - L.reserveY - 18) / rowHeight)),
+      );
       const limit = Math.min(col.length, visibleRows);
       for (let k = limit - 1; k >= 0; k--) {
         const R = this.columnRect(c);
         R.y += k * (L.slotH + L.gap);
-        const isActive = (k === 0);
+        const isActive = k === 0;
         this.drawBlock(ctx, R, col[k], isActive ? 1 : 0.88, !isActive, k + 1);
       }
       if (col.length > limit) {
-        ctx.fillStyle = 'rgba(80, 50, 30, 0.6)';
+        ctx.fillStyle = "rgba(80, 50, 30, 0.6)";
         ctx.font = "700 11px 'Outfit', sans-serif";
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
         const R = this.columnRect(c);
-        ctx.fillText(`+${col.length - limit}`, R.x + R.w / 2, R.y + limit * rowHeight + 2);
+        ctx.fillText(
+          `+${col.length - limit}`,
+          R.x + R.w / 2,
+          R.y + limit * rowHeight + 2,
+        );
       }
     }
   }
@@ -677,11 +789,17 @@ export class PixelGame {
     const pulse = 0.55 + Math.sin(performance.now() / 180) * 0.2;
     ctx.save();
     ctx.globalAlpha = pulse;
-    ctx.strokeStyle = '#FFF6A5';
+    ctx.strokeStyle = "#FFF6A5";
     ctx.lineWidth = Math.max(1, Math.min(2.5, cs * 0.16));
     for (let i = 0; i < this.cells.length; i++) {
-      if (this.cells[i] !== this.targetColor || this.reserved[i] || !this.isExposed(i)) continue;
-      const x = bx + (i % cols) * cs, y = by + ((i / cols) | 0) * cs;
+      if (
+        this.cells[i] !== this.targetColor ||
+        this.reserved[i] ||
+        !this.isExposed(i)
+      )
+        continue;
+      const x = bx + (i % cols) * cs,
+        y = by + ((i / cols) | 0) * cs;
       ctx.strokeRect(x + 0.6, y + 0.6, cs - 1.2, cs - 1.2);
     }
     ctx.restore();
@@ -691,7 +809,8 @@ export class PixelGame {
     ctx.save();
     ctx.globalAlpha = alpha;
     let { x, y, w, h } = R;
-    const b = jar.bounce || 0, sh = jar.shake || 0;
+    const b = jar.bounce || 0,
+      sh = jar.shake || 0;
     if (sh) x += Math.sin(sh * 30) * 4 * sh;
     if (b) {
       const s = 1 + Math.sin(b * Math.PI) * 0.12;
@@ -710,55 +829,65 @@ export class PixelGame {
     rr(ctx, x, y, w, h * 0.85, r);
     ctx.fill();
     if (!isLocked && jar.color === this.targetColor) {
-      ctx.strokeStyle = '#FFF6A5';
+      ctx.strokeStyle = "#FFF6A5";
       ctx.lineWidth = 2.5;
       rr(ctx, x + 1, y + 1, w - 2, h * 0.85 - 1, Math.max(2, r - 1));
       ctx.stroke();
     }
     if (jar.blocked) {
-      ctx.strokeStyle = '#C0392B';
+      ctx.strokeStyle = "#C0392B";
       ctx.lineWidth = 3;
       rr(ctx, x + 1.5, y + 1.5, w - 3, h * 0.85 - 2, Math.max(2, r - 1));
       ctx.stroke();
     }
-    
+
     // Highlight
-    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+    ctx.fillStyle = "rgba(255,255,255,0.15)";
     rr(ctx, x + 2, y + 2, w - 4, h * 0.3, r - 2);
     ctx.fill();
 
     if (isLocked) {
       const badgeSize = Math.max(12, Math.round(w * 0.27));
-      ctx.fillStyle = 'rgba(255,255,255,0.88)';
+      ctx.fillStyle = "rgba(255,255,255,0.88)";
       ctx.beginPath();
-      ctx.arc(x + badgeSize * 0.68, y + badgeSize * 0.68, badgeSize * 0.58, 0, Math.PI * 2);
+      ctx.arc(
+        x + badgeSize * 0.68,
+        y + badgeSize * 0.68,
+        badgeSize * 0.58,
+        0,
+        Math.PI * 2,
+      );
       ctx.fill();
-      ctx.fillStyle = 'rgba(59,42,32,0.85)';
+      ctx.fillStyle = "rgba(59,42,32,0.85)";
       ctx.font = `800 ${Math.round(badgeSize * 0.72)}px 'Outfit', sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(String(queuePosition), x + badgeSize * 0.68, y + badgeSize * 0.68);
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(
+        String(queuePosition),
+        x + badgeSize * 0.68,
+        y + badgeSize * 0.68,
+      );
 
       const fsNum = Math.round(w * 0.38);
       ctx.font = `800 ${fsNum}px 'Outfit', sans-serif`;
       ctx.lineWidth = Math.max(2, fsNum * 0.15);
-      ctx.strokeStyle = 'rgba(0,0,0,0.4)';
-      ctx.lineJoin = 'round';
+      ctx.strokeStyle = "rgba(0,0,0,0.4)";
+      ctx.lineJoin = "round";
       const ty = y + h * 0.48;
       ctx.strokeText(String(jar.remaining), x + w / 2, ty);
-      ctx.fillStyle = '#FFFFFF';
+      ctx.fillStyle = "#FFFFFF";
       ctx.fillText(String(jar.remaining), x + w / 2, ty);
     } else {
       const fs = Math.round(w * 0.45);
       ctx.font = `800 ${fs}px 'Outfit', sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
       ctx.lineWidth = Math.max(2, fs * 0.15);
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
-      ctx.lineJoin = 'round';
+      ctx.strokeStyle = "rgba(0, 0, 0, 0.4)";
+      ctx.lineJoin = "round";
       const ty = y + h * 0.42;
       ctx.strokeText(String(jar.remaining), x + w / 2, ty);
-      ctx.fillStyle = '#FFFFFF';
+      ctx.fillStyle = "#FFFFFF";
       ctx.fillText(String(jar.remaining), x + w / 2, ty);
     }
     ctx.restore();

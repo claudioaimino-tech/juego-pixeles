@@ -12,7 +12,8 @@ export function loadImage(src) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error(`No se pudo cargar la imagen: ${src}`));
+    img.onerror = () =>
+      reject(new Error(`No se pudo cargar la imagen: ${src}`));
     img.src = src;
   });
 }
@@ -43,7 +44,10 @@ export function imageToLevel(img, opts) {
   const iw = img.naturalWidth || img.width;
   const ih = img.naturalHeight || img.height;
   const targetAR = cols / rows;
-  let sx = 0, sy = 0, sw = iw, sh = ih;
+  let sx = 0,
+    sy = 0,
+    sw = iw,
+    sh = ih;
   if (iw / ih > targetAR) {
     sw = ih * targetAR;
     sx = (iw - sw) / 2;
@@ -52,13 +56,14 @@ export function imageToLevel(img, opts) {
     sy = (ih - sh) / 2;
   }
 
-  const W = cols * SUB, H = rows * SUB;
-  const cv = document.createElement('canvas');
+  const W = cols * SUB,
+    H = rows * SUB;
+  const cv = document.createElement("canvas");
   cv.width = W;
   cv.height = H;
-  const cx = cv.getContext('2d', { willReadFrequently: true });
+  const cx = cv.getContext("2d", { willReadFrequently: true });
   cx.imageSmoothingEnabled = true;
-  cx.imageSmoothingQuality = 'high';
+  cx.imageSmoothingQuality = "high";
   cx.drawImage(img, sx, sy, sw, sh, 0, 0, W, H);
   const px = cx.getImageData(0, 0, W, H).data;
 
@@ -80,7 +85,8 @@ export function imageToLevel(img, opts) {
         }
       }
       let best = 0;
-      for (let k = 1; k < votes.length; k++) if (votes[k] > votes[best]) best = k;
+      for (let k = 1; k < votes.length; k++)
+        if (votes[k] > votes[best]) best = k;
       cells[r * cols + c] = best;
     }
   }
@@ -91,11 +97,15 @@ export function imageToLevel(img, opts) {
     let changed = false;
     for (let k = 0; k < centroids.length; k++) {
       if (counts[k] > 0 && counts[k] < minColorCells) {
-        let best = -1, bestD = Infinity;
+        let best = -1,
+          bestD = Infinity;
         for (let j = 0; j < centroids.length; j++) {
           if (j === k || counts[j] < minColorCells) continue;
           const d = dist2(centroids[k], centroids[j]);
-          if (d < bestD) { bestD = d; best = j; }
+          if (d < bestD) {
+            bestD = d;
+            best = j;
+          }
         }
         if (best >= 0) {
           for (let i = 0; i < n; i++) if (cells[i] === k) cells[i] = best;
@@ -152,7 +162,8 @@ function kmeans(px, count, k) {
       sum += m;
     }
     if (sum === 0) break;
-    let t = rnd() * sum, idx = 0;
+    let t = rnd() * sum,
+      idx = 0;
     while (idx < samples.length - 1 && (t -= d[idx]) > 0) idx++;
     cents.push(samples[idx].slice());
   }
@@ -165,11 +176,20 @@ function kmeans(px, count, k) {
     }
     const acc = cents.map(() => [0, 0, 0, 0]);
     for (let i = 0; i < samples.length; i++) {
-      const a = acc[assign[i]], s = samples[i];
-      a[0] += s[0]; a[1] += s[1]; a[2] += s[2]; a[3]++;
+      const a = acc[assign[i]],
+        s = samples[i];
+      a[0] += s[0];
+      a[1] += s[1];
+      a[2] += s[2];
+      a[3]++;
     }
     for (let j = 0; j < cents.length; j++) {
-      if (acc[j][3] > 0) cents[j] = [acc[j][0] / acc[j][3], acc[j][1] / acc[j][3], acc[j][2] / acc[j][3]];
+      if (acc[j][3] > 0)
+        cents[j] = [
+          acc[j][0] / acc[j][3],
+          acc[j][1] / acc[j][3],
+          acc[j][2] / acc[j][3],
+        ];
     }
   }
   return cents.map((c) => c.map(Math.round));
@@ -197,27 +217,42 @@ function cleanRegions(cells, cols, rows, minRegion, numColors) {
     for (let start = 0; start < n; start++) {
       if (seen[start]) continue;
       const color = cells[start];
-      let sp = 0, rl = 0;
+      let sp = 0,
+        rl = 0;
       stack[sp++] = start;
       seen[start] = 1;
       neighborVotes.fill(0);
       while (sp > 0) {
         const i = stack[--sp];
         region[rl++] = i;
-        const r = (i / cols) | 0, c = i % cols;
-        const nb = [r > 0 ? i - cols : -1, r < rows - 1 ? i + cols : -1, c > 0 ? i - 1 : -1, c < cols - 1 ? i + 1 : -1];
+        const r = (i / cols) | 0,
+          c = i % cols;
+        const nb = [
+          r > 0 ? i - cols : -1,
+          r < rows - 1 ? i + cols : -1,
+          c > 0 ? i - 1 : -1,
+          c < cols - 1 ? i + 1 : -1,
+        ];
         for (const j of nb) {
           if (j < 0) continue;
           if (cells[j] === color) {
-            if (!seen[j]) { seen[j] = 1; stack[sp++] = j; }
+            if (!seen[j]) {
+              seen[j] = 1;
+              stack[sp++] = j;
+            }
           } else {
             neighborVotes[cells[j]]++;
           }
         }
       }
       if (rl < minRegion) {
-        let best = -1, bestV = 0;
-        for (let k = 0; k < numColors; k++) if (neighborVotes[k] > bestV) { bestV = neighborVotes[k]; best = k; }
+        let best = -1,
+          bestV = 0;
+        for (let k = 0; k < numColors; k++)
+          if (neighborVotes[k] > bestV) {
+            bestV = neighborVotes[k];
+            best = k;
+          }
         if (best >= 0) {
           for (let q = 0; q < rl; q++) cells[region[q]] = best;
           changed = true;
@@ -235,48 +270,69 @@ function countColors(cells, k) {
 }
 
 function nearest(cents, r, g, b) {
-  let best = 0, bestD = Infinity;
+  let best = 0,
+    bestD = Infinity;
   for (let j = 0; j < cents.length; j++) {
     const c = cents[j];
-    const dr = r - c[0], dg = g - c[1], db = b - c[2];
+    const dr = r - c[0],
+      dg = g - c[1],
+      db = b - c[2];
     // Distancia ponderada (más fiel a la percepción humana)
     const d = 2 * dr * dr + 4 * dg * dg + 3 * db * db;
-    if (d < bestD) { bestD = d; best = j; }
+    if (d < bestD) {
+      bestD = d;
+      best = j;
+    }
   }
   return best;
 }
 
 function dist2(a, b) {
-  const dr = a[0] - b[0], dg = a[1] - b[1], db = a[2] - b[2];
+  const dr = a[0] - b[0],
+    dg = a[1] - b[1],
+    db = a[2] - b[2];
   return dr * dr + dg * dg + db * db;
 }
 
 export function rgbToHex(r, g, b) {
-  return '#' + [r, g, b].map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('').toUpperCase();
+  return (
+    "#" +
+    [r, g, b]
+      .map((v) =>
+        Math.max(0, Math.min(255, Math.round(v)))
+          .toString(16)
+          .padStart(2, "0"),
+      )
+      .join("")
+      .toUpperCase()
+  );
 }
 
 /** Nombre de color aproximado en español, para mostrar en la interfaz. */
 export function colorName(r, g, b) {
-  const max = Math.max(r, g, b) / 255, min = Math.min(r, g, b) / 255;
+  const max = Math.max(r, g, b) / 255,
+    min = Math.min(r, g, b) / 255;
   const l = (max + min) / 2;
   const d = max - min;
   const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
-  if (l > 0.9 && s < 0.35) return 'Blanco';
-  if (l < 0.13) return 'Negro';
-  if (s < 0.15) return l > 0.6 ? 'Gris claro' : 'Gris';
+  if (l > 0.9 && s < 0.35) return "Blanco";
+  if (l < 0.13) return "Negro";
+  if (s < 0.15) return l > 0.6 ? "Gris claro" : "Gris";
   let h;
-  const R = r / 255, G = g / 255, B = b / 255;
+  const R = r / 255,
+    G = g / 255,
+    B = b / 255;
   if (max === R) h = ((G - B) / d) % 6;
   else if (max === G) h = (B - R) / d + 2;
   else h = (R - G) / d + 4;
   h = (h * 60 + 360) % 360;
-  if ((h < 40 && l < 0.4) || (h < 40 && s < 0.45 && l < 0.55)) return 'Marrón';
-  if (h < 12 || h >= 340) return l > 0.7 ? 'Rosa' : 'Rojo';
-  if (h < 40) return 'Naranja';
-  if (h < 66) return 'Amarillo';
-  if (h < 160) return 'Verde';
-  if (h < 200) return 'Celeste';
-  if (h < 250) return 'Azul';
-  if (h < 290) return 'Violeta';
-  return 'Rosa';
+  if ((h < 40 && l < 0.4) || (h < 40 && s < 0.45 && l < 0.55)) return "Marrón";
+  if (h < 12 || h >= 340) return l > 0.7 ? "Rosa" : "Rojo";
+  if (h < 40) return "Naranja";
+  if (h < 66) return "Amarillo";
+  if (h < 160) return "Verde";
+  if (h < 200) return "Celeste";
+  if (h < 250) return "Azul";
+  if (h < 290) return "Violeta";
+  return "Rosa";
 }
